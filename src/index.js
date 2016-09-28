@@ -25,14 +25,26 @@ export default class Autolink extends Component {
           case 'instagram':
             return `instagram://tag?name=${tag}`;
           case 'twitter':
-            return `twitter://search?query=%23${tag}`;
+            const twitterURL = `twitter://search?query=%23${tag}`;
+            Linking.canOpenURL(url).then(supported => {
+                if (!supported) {
+                    return `https://www.twitter.com/search?q=${tag}`;
+                }
+                return url;
+            })
           default:
             return match.getMatchedText();
         }
       case 'phone':
         return `tel:${match.getNumber()}`;
       case 'twitter':
-        return `twitter://user?screen_name=${encodeURIComponent(match.getTwitterHandle())}`;
+        const url = `twitter://user?screen_name=${encodeURIComponent(match.getTwitterHandle())}`;
+        Linking.canOpenURL(url).then(supported => {
+            if (!supported) {
+                return `https://www.twitter.com/${encodeURIComponent(match.getTwitterHandle())}`;
+            }
+            return url;
+        })
       case 'url':
         return match.getAnchorHref();
       default:
