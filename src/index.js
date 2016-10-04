@@ -38,10 +38,11 @@ export default class Autolink extends Component {
       case 'phone':
         return `tel:${match.getNumber()}`;
       case 'twitter':
-        const url = `twitter://user?screen_name=${encodeURIComponent(match.getTwitterHandle())}`;
+        const twitterHandle = encodeURIComponent(match.getTwitterHandle());
+        const url = `twitter://user?screen_name=${twitterHandle}`;
         Linking.canOpenURL(url).then(supported => {
             if (!supported) {
-                return `https://www.twitter.com/${encodeURIComponent(match.getTwitterHandle())}`;
+                return `https://www.twitter.com/${twitterHandle}`;
             }
             return url;
         })
