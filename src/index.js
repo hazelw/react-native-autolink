@@ -37,6 +37,7 @@ export default class Autolink extends Component {
           default:
             Linking.openURL(match.getMatchedText());
         }
+        break;
       case 'phone':
         return Linking.openURL(`tel:${match.getNumber()}`);
       case 'twitter':
