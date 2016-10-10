@@ -12,50 +12,60 @@ import Autolinker from 'autolinker';
 import {Linking, StyleSheet, Text} from 'react-native';
 
 export default class Autolink extends Component {
-  getURL(match) {
+  _onPress(match) {
     let type = match.getType();
 
     switch (type) {
       case 'email':
-        return `mailto:${encodeURIComponent(match.getEmail())}`;
+        Linking.openURL(`mailto:${encodeURIComponent(match.getEmail())}`);
       case 'hashtag':
         let tag = encodeURIComponent(match.getHashtag());
 
         switch (this.props.hashtag) {
           case 'instagram':
-            return `instagram://tag?name=${tag}`;
+            Linking.openURL(`instagram://tag?name=${tag}`);
           case 'twitter':
-            return `twitter://search?query=%23${tag}`;
+            const url = `twitter://search?query=%23${tag}`;
+            Linking.canOpenURL(url).then(supported => {
+                if (!supported) {
+                    Linking.openURL(`https://www.twitter.com/search?q=${tag}`);
+                } else {
+                    Linking.openURL(url);
+                }
+            });
+            break;
           default:
-            return match.getMatchedText();
+            Linking.openURL(match.getMatchedText());
         }
+        break;
       case 'phone':
-        return `tel:${match.getNumber()}`;
+        return Linking.openURL(`tel:${match.getNumber()}`);
       case 'twitter':
-        return `twitter://user?screen_name=${encodeURIComponent(match.getTwitterHandle())}`;
+        const twitterHandle = encodeURIComponent(match.getTwitterHandle());
+        const url = `twitter://user?screen_name=${twitterHandle}`;
+        Linking.canOpenURL(url).then(supported => {
+            if (!supported) {
+                Linking.openURL(`https://www.twitter.com/${twitterHandle}`);
+            } else {
+                Linking.openURL(url);
+            }
+        });
+        break;
       case 'url':
-        return match.getAnchorHref();
+        Linking.openURL(match.getAnchorHref());
       default:
-        return match.getMatchedText();
-    }
+        Linking.openURL(match.getMatchedText());
+      }
   }
 
-  _onPress(url, match) {
-    if (this.props.onPress) {
-      this.props.onPress(url, match);
-    } else {
-      Linking.openURL(url);
-    }
-  }
-
-  renderLink(text, url, match, index) {
+  renderLink(text, match, index) {
     let truncated = (this.props.truncate > 0) ? Autolinker.truncate.TruncateSmart(text, this.props.truncate, this.props.truncateChars) : text;
 
     return (
       <Text
         key={index}
         style={[styles.link, this.props.linkStyle]}
-        onPress={this._onPress.bind(this, url, match)}>
+        onPress={() => { this._onPress(match) }}>
           {truncated}
       </Text>
     );
@@ -129,7 +139,7 @@ export default class Autolink extends Component {
           case 'phone':
           case 'twitter':
           case 'url':
-            return (renderLink) ? renderLink(match.getAnchorText(), this.getURL(match), match, index) : this.renderLink(match.getAnchorText(), this.getURL(match), match, index);
+            return (renderLink) ? renderLink(match.getAnchorText(), match, index) : this.renderLink(match.getAnchorText(), match, index);
           default:
             return part;
         }
