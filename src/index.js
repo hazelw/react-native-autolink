@@ -12,53 +12,47 @@ import Autolinker from 'autolinker';
 import {Linking, StyleSheet, Text} from 'react-native';
 
 export default class Autolink extends Component {
-  getURL(match) {
+  _onPress(url, match) {
     let type = match.getType();
 
     switch (type) {
       case 'email':
-        return `mailto:${encodeURIComponent(match.getEmail())}`;
+        Linking.openURL(`mailto:${encodeURIComponent(match.getEmail())}`);
       case 'hashtag':
         let tag = encodeURIComponent(match.getHashtag());
 
         switch (this.props.hashtag) {
           case 'instagram':
-            return `instagram://tag?name=${tag}`;
+            Linking.openURL(`instagram://tag?name=${tag}`);
           case 'twitter':
             const url = `twitter://search?query=%23${tag}`;
             Linking.canOpenURL(url).then(supported => {
                 if (!supported) {
-                    return `https://www.twitter.com/search?q=${tag}`;
+                    Linking.openURL(`https://www.twitter.com/search?q=${tag}`);
+                } else {
+                    Linking.openURL(url);
                 }
-                return url;
             })
           default:
-            return match.getMatchedText();
+            Linking.openURL(match.getMatchedText());
         }
       case 'phone':
-        return `tel:${match.getNumber()}`;
+        return Linking.openURL(`tel:${match.getNumber()}`);
       case 'twitter':
         const twitterHandle = encodeURIComponent(match.getTwitterHandle());
         const url = `twitter://user?screen_name=${twitterHandle}`;
         Linking.canOpenURL(url).then(supported => {
             if (!supported) {
-                return `https://www.twitter.com/${twitterHandle}`;
-            }
-            return url;
-        })
+                Linking.openURL(`https://www.twitter.com/${twitterHandle}`);
+            } else {
+                Linking.openURL(url);
+            })
+        }
       case 'url':
-        return match.getAnchorHref();
+        Linking.openURL(match.getAnchorHref());
       default:
-        return match.getMatchedText();
-    }
-  }
-
-  _onPress(url, match) {
-    if (this.props.onPress) {
-      this.props.onPress(url, match);
-    } else {
-      Linking.openURL(url);
-    }
+        Linking.openURL(match.getMatchedText());
+      }
   }
 
   renderLink(text, url, match, index) {
@@ -68,7 +62,7 @@ export default class Autolink extends Component {
       <Text
         key={index}
         style={[styles.link, this.props.linkStyle]}
-        onPress={this._onPress.bind(this, url, match)}>
+        onPress={this._onPress.bind(this, match)}>
           {truncated}
       </Text>
     );
@@ -142,7 +136,7 @@ export default class Autolink extends Component {
           case 'phone':
           case 'twitter':
           case 'url':
-            return (renderLink) ? renderLink(match.getAnchorText(), this.getURL(match), match, index) : this.renderLink(match.getAnchorText(), this.getURL(match), match, index);
+            return (renderLink) ? renderLink(match.getAnchorText(), match, index) : this.renderLink(match.getAnchorText(), match, index);
           default:
             return part;
         }
