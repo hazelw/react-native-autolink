@@ -12,7 +12,7 @@ import Autolinker from 'autolinker';
 import {Linking, StyleSheet, Text} from 'react-native';
 
 export default class Autolink extends Component {
-  _onPress(url, match) {
+  _onPress(match) {
     let type = match.getType();
 
     switch (type) {
@@ -32,7 +32,8 @@ export default class Autolink extends Component {
                 } else {
                     Linking.openURL(url);
                 }
-            })
+            });
+            break;
           default:
             Linking.openURL(match.getMatchedText());
         }
@@ -46,8 +47,9 @@ export default class Autolink extends Component {
                 Linking.openURL(`https://www.twitter.com/${twitterHandle}`);
             } else {
                 Linking.openURL(url);
-            })
-        }
+            }
+        });
+        break;
       case 'url':
         Linking.openURL(match.getAnchorHref());
       default:
@@ -55,14 +57,14 @@ export default class Autolink extends Component {
       }
   }
 
-  renderLink(text, url, match, index) {
+  renderLink(text, match, index) {
     let truncated = (this.props.truncate > 0) ? Autolinker.truncate.TruncateSmart(text, this.props.truncate, this.props.truncateChars) : text;
 
     return (
       <Text
         key={index}
         style={[styles.link, this.props.linkStyle]}
-        onPress={this._onPress.bind(this, match)}>
+        onPress={() => { this._onPress(match) }}>
           {truncated}
       </Text>
     );
