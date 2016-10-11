@@ -7,13 +7,26 @@
  */
 
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, Linking } from 'react-native';
 import { shallow } from 'enzyme';
 import { expect } from 'chai';
 import sinon from 'sinon';
+import sinonStubPromise from 'sinon-stub-promise';
 import Autolink from '../src/index';
 
+sinonStubPromise(sinon);
+
 describe('<Autolink />', () => {
+  let stubbedCanOpen;
+  beforeEach(() => {
+    stubbedCanOpen = sinon.stub(Linking, 'canOpenURL');
+    Linking.openURL = sinon.spy();
+  });
+
+  afterEach(() => {
+    stubbedCanOpen.restore(Linking.canOpenURL);
+  });
+
   it('should render a Text node', () => {
     const wrapper = shallow(<Autolink text="" />);
     expect(wrapper.find('Text')).to.have.length(1);
@@ -120,5 +133,41 @@ describe('<Autolink />', () => {
     const wrapper = shallow(<Autolink text="josh@sportifik.com" onPress={onPress} />);
     wrapper.children().find('Text').simulate('press');
     expect(onPress.calledWith('mailto:josh%40sportifik.com')).to.equal(true);
+  });
+  it('should call OpenURL in the Twitter scheme when text contains a Twitter handle and `canOpenURL` returns true', () => {
+    stubbedCanOpen.returnsPromise().resolves(true);
+    const wrapper = shallow(<Autolink text="Hi @someone" twitter />);
+    wrapper.children().find('Text').simulate('press');
+    expect(Linking.openURL.calledWith('twitter://user?screen_name=someone')).to.equal(true);
+  });
+  it('should call OpenURL with a Twitter web URL when text contains a Twitter handle and `canOpenURL` returns false', () => {
+    stubbedCanOpen.returnsPromise().resolves(false);
+    const wrapper = shallow(<Autolink text="Hi @someone" twitter />);
+    wrapper.children().find('Text').simulate('press');
+    expect(Linking.openURL.calledWith('https://www.twitter.com/someone')).to.equal(true);
+  });
+  it('should call OpenURL in the Twitter scheme when text contains a Twitter hashtag and `canOpenURL` returns true', () => {
+    stubbedCanOpen.returnsPromise().resolves(true);
+    const wrapper = shallow(<Autolink text="Message about #something" hashtag="twitter" />);
+    wrapper.children().find('Text').simulate('press');
+    expect(Linking.openURL.calledWith('twitter://search?query=%23something')).to.equal(true);
+  });
+  it('should call OpenURL with a Twitter web URL when text contains a Twitter hashtag and `canOpenURL` returns false', () => {
+    stubbedCanOpen.returnsPromise().resolves(false);
+    const wrapper = shallow(<Autolink text="Message about #something" hashtag="twitter" />);
+    wrapper.children().find('Text').simulate('press');
+    expect(Linking.openURL.calledWith('https://www.twitter.com/search?q=%23something')).to.equal(true);
+  });
+  it('should call OpenURL in the Instagram scheme when text contains an Instagram hashtag and `canOpenURL` returns true', () => {
+    stubbedCanOpen.returnsPromise().resolves(true);
+    const wrapper = shallow(<Autolink text="Message about #something" hashtag="instagram" />);
+    wrapper.children().find('Text').simulate('press');
+    expect(Linking.openURL.calledWith('instagram://tag?name=something')).to.equal(true);
+  });
+  it('should call OpenURL with an Instagram web URL when text contains an Instagram hashtag and `canOpenURL` returns false', () => {
+    stubbedCanOpen.returnsPromise().resolves(false);
+    const wrapper = shallow(<Autolink text="Message about #something" hashtag="instagram" />);
+    wrapper.children().find('Text').simulate('press');
+    expect(Linking.openURL.calledWith('https://www.instagram.com/explore/tags/something')).to.equal(true);
   });
 });

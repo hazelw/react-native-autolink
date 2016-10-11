@@ -25,28 +25,38 @@ export default class Autolink extends Component {
           case 'instagram':
             return `instagram://tag?name=${tag}`;
           case 'twitter':
-            const twitterURL = `twitter://search?query=%23${tag}`;
-            Linking.canOpenURL(url).then(supported => {
-                if (!supported) {
-                    return `https://www.twitter.com/search?q=${tag}`;
-                }
-                return url;
-            })
+            return `twitter://search?query=%23${tag}`;
           default:
             return match.getMatchedText();
         }
       case 'phone':
         return `tel:${match.getNumber()}`;
       case 'twitter':
-        const url = `twitter://user?screen_name=${encodeURIComponent(match.getTwitterHandle())}`;
-        Linking.canOpenURL(url).then(supported => {
-            if (!supported) {
-                return `https://www.twitter.com/${encodeURIComponent(match.getTwitterHandle())}`;
-            }
-            return url;
-        })
+        return `twitter://user?screen_name=${encodeURIComponent(match.getTwitterHandle())}`;
       case 'url':
         return match.getAnchorHref();
+      default:
+        return match.getMatchedText();
+    }
+  }
+
+  getFallbackURL(match) {
+    let type = match.getType();
+
+    switch(type) {
+      case 'hashtag':
+        let tag = encodeURIComponent(match.getHashtag());
+
+        switch(this.props.hashtag) {
+          case 'instagram':
+            return `https://www.instagram.com/explore/tags/${tag}`;
+          case 'twitter':
+            return `https://www.twitter.com/search?q=%23${tag}`;
+          default:
+            return match.getMatchedText();
+        }
+      case 'twitter':
+        return `https://www.twitter.com/${encodeURIComponent(match.getTwitterHandle())}`;
       default:
         return match.getMatchedText();
     }
@@ -56,7 +66,13 @@ export default class Autolink extends Component {
     if (this.props.onPress) {
       this.props.onPress(url, match);
     } else {
-      Linking.openURL(url);
+      Linking.canOpenURL(url).then(supported => {
+        if (!supported) {
+          Linking.openURL(this.getFallbackURL(match));
+        } else {
+          Linking.openURL(url);
+        }
+      });
     }
   }
 
